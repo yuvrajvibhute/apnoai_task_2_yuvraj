@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApnoAI Task 2 — React Profile Card</title>
+  <meta name="description" content="A modern glassmorphism React profile card built with props and state — ApnoAI Internship Task 2." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- React 18 + Babel (CDN — no npm needed) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* === CSS Reset & Tokens === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --grad-a: #7c3aed;
+      --grad-b: #ec4899;
+      --grad-c: #06b6d4;
+      --accent:  #7c3aed;
+      --radius:  24px;
+      --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: background var(--transition);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* === Animated Gradient Background === */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      transition: background var(--transition);
+    }
+
+    body.light::before {
+      background: linear-gradient(135deg, #c7d2fe 0%, #e0e7ff 30%, #fce7f3 60%, #cffafe 100%);
+    }
+
+    body.dark::before {
+      background: linear-gradient(135deg, #0d0f1a 0%, #1a0533 40%, #001233 80%, #0d0f1a 100%);
+    }
+
+    /* Floating orb */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+      z-index: -1;
+      top: -100px;
+      right: -100px;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+
+    body.light::after { background: radial-gradient(circle, #7c3aed, #ec4899); }
+    body.dark::after  { background: radial-gradient(circle, #4f1fb0, #831843); }
+
+    @keyframes orbFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(-30px,40px) scale(1.05); }
+      66%      { transform: translate(20px,-20px) scale(0.95); }
+    }
+
+    /* === Glass Card === */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      border-radius: var(--radius);
+      padding: 44px 36px 36px;
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      position: relative;
+      transition: background var(--transition), border var(--transition), box-shadow var(--transition);
+      animation: cardIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    body.light .card {
+      background: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 32px 80px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    body.dark .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    @keyframes cardIn {
+      from { opacity:0; transform:translateY(40px) scale(0.95); }
+      to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+
+    /* === Theme Toggle === */
+    .theme-btn {
+      position: absolute;
+      top: 18px; right: 18px;
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition), transform 0.2s;
+    }
+
+    body.light .theme-btn { background: rgba(255,255,255,0.55); }
+    body.dark  .theme-btn { background: rgba(255,255,255,0.08); }
+    .theme-btn:hover { transform: scale(1.12) rotate(15deg); }
+
+    /* === Avatar === */
+    .avatar-wrap {
+      position: relative;
+      width: 96px; height: 96px;
+      margin: 0 auto 20px;
+    }
+
+    .avatar-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--grad-a), var(--grad-b), var(--grad-c));
+      animation: spin 4s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .avatar {
+      position: relative;
+      z-index: 1;
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid white;
+      display: block;
+    }
+
+    .status-dot {
+      position: absolute;
+      bottom: 4px; right: 4px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid white;
+      z-index: 2;
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseDot {
+      0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+      50%      { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+    }
+
+    /* === Name & Role === */
+    .name {
+      text-align: center;
+      font-size: 1.5rem; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.2;
+      transition: color var(--transition);
+    }
+
+    body.light .name { color: #1a1a2e; }
+    body.dark  .name { color: #e8eaf6; }
+
+    .role {
+      text-align: center;
+      font-size: 0.875rem; font-weight: 500;
+      margin-top: 6px;
+      background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* === Divider === */
+    .divider {
+      height: 1px;
+      margin: 20px 0;
+      background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent);
+    }
+
+    /* === Bio === */
+    .bio {
+      text-align: center;
+      font-size: 0.9rem; line-height: 1.65;
+      min-height: 3em;
+      transition: color var(--transition);
+    }
+
+    body.light .bio { color: #5c5f7a; }
+    body.dark  .bio { color: #9395b0; }
+
+    .cursor {
+      display: inline-block;
+      width: 2px; height: 1em;
+      background: var(--accent);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.85s step-end infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* === Skills === */
+    .skills-label {
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      text-align: center; margin-bottom: 10px;
+      transition: color var(--transition);
+    }
+
+    body.light .skills-label { color: #5c5f7a; }
+    body.dark  .skills-label { color: #9395b0; }
+
+    .skills {
+      display: flex; flex-wrap: wrap;
+      gap: 8px; justify-content: center;
+    }
+
+    .skill-pill {
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem; font-weight: 600;
+      cursor: default;
+      transition: transform 0.2s, box-shadow 0.2s, background var(--transition);
+      border: 1px solid transparent;
+    }
+
+    body.light .skill-pill {
+      background: rgba(124,58,237,0.1);
+      color: var(--accent);
+      border-color: rgba(124,58,237,0.2);
+    }
+
+    body.dark .skill-pill {
+      background: rgba(124,58,237,0.18);
+      color: #c4b5fd;
+      border-color: rgba(124,58,237,0.3);
+    }
+
+    .skill-pill:hover {
+      transform: translateY(-3px) scale(1.06);
+      box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+    }
+
+    /* === Stats === */
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      padding: 16px 0;
+      border-radius: 16px;
+      transition: background var(--transition);
+    }
+
+    body.light .stats { background: rgba(255,255,255,0.4); }
+    body.dark  .stats { background: rgba(255,255,255,0.05); }
+
+    .stat { text-align: center; }
+
+    .stat-value {
+      font-size: 1.25rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.7rem; font-weight: 500;
+      margin-top: 2px;
+      transition: color var(--transition);
+    }
+
+    body.light .stat-label { color: #5c5f7a; }
+    body.dark  .stat-label { color: #9395b0; }
+
+    /* === Like Button === */
+    .like-btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px;
+      width: 100%; padding: 13px;
+      border-radius: 14px; border: none;
+      cursor: pointer;
+      font-size: 0.95rem; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      transition: transform 0.2s, box-shadow 0.2s, background var(--transition), color var(--transition);
+      margin-bottom: 12px;
+      position: relative; overflow: hidden;
+    }
+
+    .like-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .like-btn.liked::before { opacity: 1; }
+
+    .like-btn .btn-inner { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; }
+
+    body.light .like-btn:not(.liked) {
+      background: rgba(255,255,255,0.6);
+      color: #1a1a2e;
+      border: 1px solid rgba(124,58,237,0.2);
+    }
+
+    body.dark .like-btn:not(.liked) {
+      background: rgba(255,255,255,0.07);
+      color: #e8eaf6;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .like-btn.liked { color: white; border: 1px solid transparent; }
+
+    .like-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(124,58,237,0.3); }
+    .like-btn:active { transform: scale(0.97); }
+
+    .heart { font-size: 1.1rem; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); display: inline-block; }
+    .like-btn:hover .heart { transform: scale(1.3); }
+
+    /* === Socials === */
+    .socials {
+      display: flex; justify-content: center; gap: 10px;
+    }
+
+    .social-btn {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      font-size: 1.1rem;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+    }
+
+    body.light .social-btn { background: rgba(255,255,255,0.55); color: #1a1a2e; }
+    body.dark  .social-btn { background: rgba(255,255,255,0.08); color: #e8eaf6; }
+
+    .social-btn:hover {
+      transform: translateY(-3px) scale(1.1);
+      box-shadow: 0 8px 24px rgba(124,58,237,0.3);
+      background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+      color: white;
+    }
+
+    /* === Floating Badge === */
+    .badge {
+      position: absolute;
+      top: -12px; left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.08em;
+      background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+      color: white;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+    }
+  </style>
+</head>
+<body class="light" id="body">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    /* =====================================================
+       COMPONENT: TypingText
+       Animates text letter by letter using useState.
+       STATE: displayed — the portion of text shown so far.
+    ===================================================== */
+    function TypingText({ text, speed }) {
+      const [displayed, setDisplayed] = useState('');
+      const [done, setDone] = useState(false);
+
+      useEffect(() => {
+        let i = 0;
+        setDisplayed('');
+        setDone(false);
+        const timer = setInterval(() => {
+          i++;
+          setDisplayed(text.slice(0, i));
+          if (i >= text.length) {
+            clearInterval(timer);
+            setDone(true);
+          }
+        }, speed || 30);
+        return () => clearInterval(timer);
+      }, [text, speed]);
+
+      return (
+        <span>
+          {displayed}
+          {!done && <span className="cursor" aria-hidden="true" />}
+        </span>
+      );
+    }
+
+    /* =====================================================
+       COMPONENT: SkillPill
+       Tiny reusable badge for a single skill label.
+       PROPS: label (string)
+    ===================================================== */
+    function SkillPill({ label }) {
+      return <span className="skill-pill">{label}</span>;
+    }
+
+    /* =====================================================
+       COMPONENT: SocialLink
+       Icon anchor that opens a social profile.
+       PROPS: href, emoji, label
+    ===================================================== */
+    function SocialLink({ href, emoji, label }) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="social-btn"
+          aria-label={label}
+          title={label}
+        >
+          {emoji}
+        </a>
+      );
+    }
+
+    /* =====================================================
+       MAIN COMPONENT: ProfileCard
+       Receives personalisation data via PROPS.
+       Manages two STATE values:
+         • isDark  — controls light / dark theme
+         • likes   — heart / like counter (BONUS feature)
+    ===================================================== */
+    function ProfileCard({ name, role, bio, skills, avatar, github, twitter, linkedin, instagram }) {
+
+      /* --- STATE --- */
+      // isDark: toggles between light and dark mode
+      const [isDark, setIsDark] = useState(false);
+
+      // likes: counts how many times the card was liked
+      const [likes, setLikes] = useState(0);
+
+      // liked: has the current visitor pressed Like?
+      const [liked, setLiked] = useState(false);
+
+      /* --- SIDE EFFECT: keep body class in sync --- */
+      useEffect(() => {
+        document.getElementById('body').className = isDark ? 'dark' : 'light';
+      }, [isDark]);
+
+      /* --- EVENT HANDLERS --- */
+      function toggleTheme() {
+        setIsDark(function(prev) { return !prev; });
+      }
+
+      function handleLike() {
+        if (!liked) {
+          setLikes(function(prev) { return prev + 1; });
+          setLiked(true);
+        } else {
+          setLikes(function(prev) { return prev - 1; });
+          setLiked(false);
+        }
+      }
+
+      /* --- RENDER --- */
+      return (
+        <div className="card" role="main" aria-label="Profile card">
+
+          {/* Floating label badge */}
+          <div className="badge">&#10022; React Component</div>
+
+          {/* Theme toggle — calls toggleTheme() on click */}
+          <button
+            className="theme-btn"
+            onClick={toggleTheme}
+            id="theme-toggle"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? '☀️' : '🌙'}
+          </button>
+
+          {/* ── Avatar ────────────────────────────── */}
+          <div className="avatar-wrap">
+            <div className="avatar-ring" aria-hidden="true"></div>
+            <img
+              className="avatar"
+              src={avatar}
+              alt={name + "'s profile photo"}
+              onError={function(e) {
+                e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=7c3aed&color=fff&size=200';
+              }}
+            />
+            <span className="status-dot" title="Available" aria-label="Online"></span>
+          </div>
+
+          {/* ── Name and role (from PROPS) ─────────── */}
+          <h1 className="name">{name}</h1>
+          <p className="role">{role}</p>
+
+          <div className="divider" aria-hidden="true"></div>
+
+          {/* ── Bio with typing effect ──────────────── */}
+          <p className="bio">
+            <TypingText text={bio} speed={28} />
+          </p>
+
+          <div className="divider" aria-hidden="true"></div>
+
+          {/* ── Stats row ───────────────────────────── */}
+          <div className="stats" aria-label="Profile statistics">
+            <div className="stat">
+              <div className="stat-value">12</div>
+              <div className="stat-label">Projects</div>
+            </div>
+            <div className="stat">
+              <div className="stat-value">3.2k</div>
+              <div className="stat-label">Followers</div>
+            </div>
+            <div className="stat">
+              {/* This stat updates dynamically with STATE */}
+              <div className="stat-value">{likes}</div>
+              <div className="stat-label">Likes</div>
+            </div>
+          </div>
+
+          {/* ── Skills (rendered from PROPS array) ──── */}
+          <p className="skills-label">Skills</p>
+          <div className="skills" aria-label="Skills">
+            {skills.map(function(skill) {
+              return <SkillPill key={skill} label={skill} />;
+            })}
+          </div>
+
+          <div className="divider" aria-hidden="true"></div>
+
+          {/* ── Like Button (BONUS +10 XP) ───────────── */}
+          <button
+            className={'like-btn ' + (liked ? 'liked' : '')}
+            onClick={handleLike}
+            id="like-button"
+            aria-label={liked ? 'Unlike this profile' : 'Like this profile'}
+            aria-pressed={liked}
+          >
+            <span className="btn-inner">
+              <span className="heart">{liked ? '❤️' : '🤍'}</span>
+              <span>{liked ? 'Liked · ' + likes : 'Like this card · ' + likes}</span>
+            </span>
+          </button>
+
+          {/* ── Social links ────────────────────────── */}
+          <div className="socials" aria-label="Social profiles">
+            <SocialLink href={github}    emoji="🐙" label="GitHub" />
+            <SocialLink href={twitter}   emoji="✉️" label="Email" />
+            <SocialLink href={linkedin}  emoji="💼" label="LinkedIn" />
+            <SocialLink href={instagram} emoji="📷" label="Instagram" />
+          </div>
+
+        </div>
+      );
+    }
+
+    /* =====================================================
+       APP ROOT
+       Pass your personal data as PROPS to ProfileCard.
+       Edit the values below to customise your card!
+    ===================================================== */
+    function App() {
+      return React.createElement(ProfileCard, {
+        name:      "Yuvraj Vibhute",
+        role:      "Full-Stack Developer · ApnoAI Intern",
+        bio:       "Building delightful products at the intersection of design and code. Passionate about React, modern UI, and open-source collaboration.",
+        skills:    ["React", "TypeScript", "Node.js", "Figma", "Python"],
+        avatar:    "https://ui-avatars.com/api/?name=Yuvraj+Vibhute&background=7c3aed&color=fff&size=200",
+        github:    "https://github.com/yuvrajvibhute",
+        twitter:   "mailto:yuvrajvibhute2222@gmail.com",
+        linkedin:  "https://www.linkedin.com/in/yuvraj-vibhute-43336a321",
+        instagram: "https://www.instagram.com/yuvrajvibhute22"
+      });
+    }
+
+    /* Mount the React app */
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+  </script>
+</body>
+</html>
